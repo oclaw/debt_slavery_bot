@@ -16,8 +16,8 @@ namespace DebtSlaveryBot.Bot.Scenario
 {
     class PayOffDebtsScenario : TgBotUserEventScenario
     {
-        public PayOffDebtsScenario(ILogger<IBotService> logger, ITelegramBotClient botClient)
-            : base(logger, botClient)
+        public PayOffDebtsScenario(ILogger<IBotService> logger, IServiceProvider serviceProvider)
+            : base(logger, serviceProvider)
         {
             ScheduleNext(OnStart);
         }
@@ -35,7 +35,7 @@ namespace DebtSlaveryBot.Bot.Scenario
 
         private async Task SendBorrowerList(long chatId)
         {
-            var manager = Global.Services.GetService<Model.IDebtManager>();
+            var manager = DebtManager;
             var borrowers = manager.GetBorrowers(Context.Creditor.Name);
             if (!borrowers.Any())
             {
@@ -66,7 +66,7 @@ namespace DebtSlaveryBot.Bot.Scenario
         {
             try
             {
-                var manager = Global.Services.GetService<Model.IDebtManager>();
+                var manager = DebtManager;
 
                 // temp default event
                 // todo remove
@@ -167,7 +167,7 @@ namespace DebtSlaveryBot.Bot.Scenario
                     throw new ScenarioLogicalException(errorText);
                 }
                 var user = GetUser(message.Text, errorText);
-                var manager = Global.Services.GetService<Model.IDebtManager>();
+                var manager = DebtManager;
 
                 Context.SelectedBorrower = user;
 
@@ -188,7 +188,7 @@ namespace DebtSlaveryBot.Bot.Scenario
 
         public async Task WriteOffAll(long curChatId)
         {
-            var manager = Global.Services.GetService<Model.IDebtManager>();
+            var manager = DebtManager;
 
             var borrower = Context.SelectedBorrower;
 
@@ -205,7 +205,7 @@ namespace DebtSlaveryBot.Bot.Scenario
 
         public async Task WriteOffPart(long curChatId, decimal sum)
         {
-            var manager = Global.Services.GetService<Model.IDebtManager>();
+            var manager = DebtManager;
 
             var borrower = Context.SelectedBorrower;
             var debts = manager.GetActiveDebts(borrower.Name, Context.Creditor.Name);
@@ -279,7 +279,7 @@ namespace DebtSlaveryBot.Bot.Scenario
                 
                 await WriteOffPart(message.Chat.Id, sum);
 
-                var manager = Global.Services.GetService<Model.IDebtManager>();
+                var manager = DebtManager;
                 var user = manager.GetUser(message.From.Id);
                 if (Context.Creditor != user)
                 {

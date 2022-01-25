@@ -12,17 +12,17 @@ namespace DebtSlaveryBot.Bot.Commands
 {
     internal class GetMyDebtsCommand : ExtendedBotCommand
     {
-        public GetMyDebtsCommand(ILogger<IBotService> logger, string botName) :
-            base(logger, botName)
+        public GetMyDebtsCommand(ILogger<IBotService> logger, IServiceProvider serviceProvider, string botName) :
+            base(logger, serviceProvider, botName)
         {
             Command = "/get_my_debts";
             Description = "get information about all your creditors";
         }
 
-        public override async Task Execute(ITelegramBotClient client, IBotService botService, Message message)
+        public override async Task Execute(Message message)
         {
-            botService.RunScenario(new ChatEntry(message),
-                       new Scenario.GetMyDebtsScenario(Logger, client));
+            Bot.RunScenario(new ChatEntry(message),
+                       new Scenario.GetMyDebtsScenario(Logger, ServiceProvider));
         }
     }
 }

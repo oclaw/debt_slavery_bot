@@ -12,14 +12,14 @@ namespace DebtSlaveryBot.Bot.Commands
 {
     class HelpCommand : ExtendedBotCommand
     {
-        public HelpCommand(ILogger<IBotService> _logger, string botName)
-            : base(_logger, botName)
+        public HelpCommand(ILogger<IBotService> _logger, IServiceProvider serviceProvider, string botName)
+            : base(_logger, serviceProvider, botName)
         {
             Command = "/help";
             Description = "Display help";
         }
 
-        public async override Task Execute(ITelegramBotClient client, IBotService botService, Message messageData)
+        public async override Task Execute(Message messageData)
         {
             var response = "Debt Slavery Bot - бот для учета долгов\n" +
                 "Общие команды: \n" +
@@ -29,7 +29,7 @@ namespace DebtSlaveryBot.Bot.Commands
                 "/get_my_debts - просмотреть всех, кому должен\n" +
                 "/pay_off_debts - списать долги\n" +
                 "/cancel - отменить текущий сценарий";
-            await client.SendTextMessageAsync(messageData.Chat.Id, response);
+            await TgClient.SendTextMessageAsync(messageData.Chat.Id, response);
         }
     }
 }

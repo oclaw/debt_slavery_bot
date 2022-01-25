@@ -18,17 +18,21 @@ namespace DebtSlaveryBot.Bot.Scenario
         private LinkedList<StepExecutor> ScenarioChain;
         private LinkedListNode<StepExecutor> CurrentExecutor;
 
+        private IServiceProvider _services;
+
         protected ILogger<IBotService> Logger { get; private set; }
-        protected ITelegramBotClient BotClient { get; private set; }
-        protected IBotService BotService => Global.Services.GetService<IBotService>();
+        protected ITelegramBotClient BotClient => _services.GetService<ITelegramBotClient>();
+        protected IBotService BotService => _services.GetService<IBotService>();
+        protected Model.IDebtManager DebtManager => _services.GetService<Model.IDebtManager>();
+
         protected Message CurrentMessage { get; private set; }  // TODO: replace method parameter with property
 
         public bool Completed => CurrentExecutor == null;
 
-        protected TelegramBotScenario(ILogger<IBotService> logger, ITelegramBotClient botClient)
+        protected TelegramBotScenario(ILogger<IBotService> logger, IServiceProvider services)
         {
             Logger = logger;
-            BotClient = botClient;
+            _services = services;
             ScenarioChain = new LinkedList<StepExecutor>();
         }
 

@@ -8,6 +8,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DebtSlaveryBot.Bot.Commands
 {
@@ -15,13 +16,19 @@ namespace DebtSlaveryBot.Bot.Commands
     {
         protected readonly ILogger<IBotService> Logger;
 
+        protected readonly IServiceProvider ServiceProvider;
+
         private string BotName;
 
         private string NamedBotCall => $"@{BotName}";
 
-        protected ExtendedBotCommand(ILogger<IBotService> logger, string botName)
+        protected IBotService Bot => ServiceProvider.GetService<IBotService>();
+        protected ITelegramBotClient TgClient => ServiceProvider.GetService<ITelegramBotClient>();
+
+        protected ExtendedBotCommand(ILogger<IBotService> logger, IServiceProvider _services, string botName)
         {
             Logger = logger;
+            ServiceProvider = _services;
             BotName = botName;
         }
 
@@ -44,10 +51,10 @@ namespace DebtSlaveryBot.Bot.Commands
             return false;
         }
 
-        public virtual async Task Execute(ITelegramBotClient client, IBotService botService, Message messageData)
+        public virtual async Task Execute(Message messageData)
         {
             Logger.LogDebug($"Message passed to command '{Command}' handler!");
-            await client.SendTextMessageAsync(chatId: messageData.Chat.Id,
+            await TgClient.SendTextMessageAsync(chatId: messageData.Chat.Id,
                                               text: $"command '{Command}' not implemented yet :c");
         }
     }

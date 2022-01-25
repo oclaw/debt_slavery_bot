@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using DebtSlaveryBot.Helpers;
 using DebtSlaveryBot.Model;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,13 +13,14 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
-using Telegram.Bot.Types.InlineQueryResults;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Extensions.Polling;
 
 using DebtSlaveryBot.Bot.Commands;
+
 using System.Collections.Concurrent;
+
+using Microsoft.Extensions.Configuration;
 
 namespace DebtSlaveryBot.Bot
 {
@@ -28,15 +28,24 @@ namespace DebtSlaveryBot.Bot
     class BotService : IBotService
     {
         private readonly ILogger<BotService> _logger;
-        private const string BotSettingsConfigSection = "Bot-Settings";
-        private ITelegramBotClient BotClient = null;
+        private readonly IServiceProvider _services;
+        private readonly IConfiguration _config;
+
+        private ITelegramBotClient BotClient => _services.GetService<ITelegramBotClient>();
+        private DbContext DbContext => _services.GetService<DebtDbContext>();
         private List<ExtendedBotCommand> Commands;
 
         private ConcurrentDictionary<ChatEntry, Scenario.TelegramBotScenario> Executors;
 
-        public BotService(ILogger<BotService> logger)
+        private const string BotSettingsConfigSection = "Bot-Settings";
+
+        private string BotName;
+
+        public BotService(ILogger<BotService> logger, IServiceProvider provider, IConfiguration config)
         {
             _logger = logger;
+            _services = provider;
+            _config = config;
             Executors = new ConcurrentDictionary<ChatEntry, Scenario.TelegramBotScenario>();
         }
 
@@ -67,7 +76,7 @@ namespace DebtSlaveryBot.Bot
             }
             catch (InvalidOperationException)
             {
-                var manager = Global.Services.GetService<IDebtManager>();
+                var manager = _services.GetService<IDebtManager>();
                 var user = manager.GetUser(tgUserId);
                 if (user == null)
                 {
@@ -79,30 +88,30 @@ namespace DebtSlaveryBot.Bot
             }
         }
 
+        private ExtendedBotCommand Command<T>() where T: ExtendedBotCommand => 
+            (ExtendedBotCommand)Activator.CreateInstance(typeof(T), _logger, _services, BotName);
+
         public void Start(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Service starting");
 
-            Global.DbContext.Database.EnsureCreated();
+            DbContext.Database.EnsureCreated();
 
-            var botSettings = Global.Config.GetSection(BotSettingsConfigSection);
+            var botSettings = _config.GetSection(BotSettingsConfigSection);
 
-            BotClient = new TelegramBotClient(botSettings.GetSection("token").Value);
             var me = BotClient.GetMeAsync().Result;
+
+            BotName = me.Username;
 
             _logger.LogInformation($"Bot connected with ID {me.Id} and bot name is {me.Username}");
 
             Commands = new List<ExtendedBotCommand>
             {
-                new StartCommand(_logger, me.Username),
-                new HelpCommand(_logger, me.Username),
-                new AddDebtCommand(_logger, me.Username),
-                new ShareDebtCommand(_logger, me.Username),
-                new PayOffDebtsCommand(_logger, me.Username),
-                new CancelCommand(_logger, me.Username),
-                new GetAllDebtsCommand(_logger, me.Username),
-                new GetMyDebtsCommand(_logger, me.Username),
-                new ImpersonalModeCommand(_logger, me.Username)
+                Command<StartCommand>(), Command<HelpCommand>(),
+                Command<AddDebtCommand>(), Command<ShareDebtCommand>(),
+                Command<PayOffDebtsCommand>(), Command<CancelCommand>(),
+                Command<GetAllDebtsCommand>(), Command<GetMyDebtsCommand>(),
+                Command<ImpersonalModeCommand>()
             };
 
             BotClient.SetMyCommandsAsync(Commands).Wait();
@@ -113,7 +122,7 @@ namespace DebtSlaveryBot.Bot
 
             // temp part for defaulting event
             // todo remove
-            var manager = Global.Services.GetService<IDebtManager>();
+            var manager = _services.GetService<IDebtManager>();
             var _event = manager.GetEvent(Helpers.Defaults.DefaultEvent);
             if (_event == null)
             {
@@ -121,7 +130,7 @@ namespace DebtSlaveryBot.Bot
                 _logger.LogInformation($"Default Event '{Helpers.Defaults.DefaultEvent}' added!");
             }
 
-            var db = Global.Services.GetService<DebtDbContext>();
+            var db = _services.GetService<DebtDbContext>();
 
             var receiverOptions = new ReceiverOptions() { AllowedUpdates = { } }; 
             BotClient.StartReceiving(
@@ -175,7 +184,7 @@ namespace DebtSlaveryBot.Bot
             {
                 if (command.Matches(message))
                 {
-                    await command.Execute(BotClient, this, message);
+                    await command.Execute(message);
                 }
             }
             if (!Executors.TryGetValue(entry, out Scenario.TelegramBotScenario scenario) || scenario == null)

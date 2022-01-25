@@ -11,16 +11,16 @@ namespace DebtSlaveryBot.Bot.Commands
 {
     internal class AddDebtCommand : ExtendedBotCommand
     {
-        public AddDebtCommand(ILogger<IBotService> logger, string botName) :
-            base(logger, botName)
+        public AddDebtCommand(ILogger<IBotService> logger, IServiceProvider serviceProvider, string botName) :
+            base(logger, serviceProvider, botName)
         {
             Command = "/add_debt";
             Description = "add debt from one or more users to you";
         }
 
-        public override async Task Execute(Telegram.Bot.ITelegramBotClient client, IBotService botService, Message message)
+        public override async Task Execute(Message message)
         {
-            botService.RunScenario(new ChatEntry(message), new Scenario.AddDebtScenario(Logger, client));
+            Bot.RunScenario(new ChatEntry(message), new Scenario.AddDebtScenario(Logger, ServiceProvider));
         }
     }
 }

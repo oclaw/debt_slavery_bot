@@ -8,23 +8,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using DebtSlaveryBot.Bot;
 using DebtSlaveryBot.Model;
+using Telegram.Bot;
 
 
 namespace DebtSlaveryBot
 {
-    public static class Global
-    {
-        public static IServiceProvider Services { get; set; }
-
-        public static IConfigurationRoot Config { get; set; }
-
-        public static DebtDbContext DbContext => Services.GetService<DebtDbContext>();
-    }
-
     class Program
     {
         private static IConfigurationRoot _config = null;
         private static ILogger _logger = null;
+        private static IServiceProvider _serviceProvider;
 
         static void LogFatal(string message)
         {
@@ -67,6 +60,9 @@ namespace DebtSlaveryBot
         const string PgSqlConnString = "PgSql";
         const string InMemConnString = "InMemory";
         const string MySqlConnString = "MySql";
+
+        private const string BotSettingsConfigSection = "Bot-Settings";
+
 
         static IServiceCollection InitPgSql(IServiceCollection services, ILoggerFactory logFac)
         {
@@ -121,13 +117,16 @@ namespace DebtSlaveryBot
 
             InitDatabase(serviceCollection, loggerFactory);
 
+            serviceCollection.AddSingleton<IConfiguration>(_config);
             serviceCollection.AddSingleton<IBotService, BotService>();
             serviceCollection.AddTransient<IDebtManager, DebtManager>();
+            serviceCollection.AddSingleton<ITelegramBotClient>(sp => {
+                var botSettings = _config.GetSection(BotSettingsConfigSection);
+                var token = botSettings.GetValue<string>("token");
+                return new TelegramBotClient(token);
+            });
 
-            provider = serviceCollection.BuildServiceProvider();
-
-            Global.Services = provider;
-            Global.Config = _config;
+            _serviceProvider = serviceCollection.BuildServiceProvider();
         }
 
         static async Task MainAsync(string[] args)
@@ -141,7 +140,7 @@ namespace DebtSlaveryBot
 
             ConfigureServices(serviceCollection);
 
-            var mainService = Global.Services.GetService<IBotService>();
+            var mainService = _serviceProvider.GetService<IBotService>();
 
             _logger.LogInformation("Starting main application");
 

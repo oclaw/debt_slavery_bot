@@ -19,8 +19,8 @@ namespace DebtSlaveryBot.Bot.Scenario
     // Base class with helper methods for scenarios that includes both user and events model types (e.g. AddDebts, ShareDebt)
     class TgBotUserEventScenario : TelegramBotScenario
     {
-        public TgBotUserEventScenario(ILogger<IBotService> logger, ITelegramBotClient botClient)
-            : base(logger, botClient)
+        public TgBotUserEventScenario(ILogger<IBotService> logger, IServiceProvider serviceProvider)
+            : base(logger, serviceProvider)
         { }
 
         protected string BuildUserListFromEvent(string prefix, Model.DebtEvent _event, Model.User skipUser, string postfix)
@@ -105,7 +105,7 @@ namespace DebtSlaveryBot.Bot.Scenario
 
         protected Model.User GetUserFromMessage(Message message, Model.DebtEvent _event, Model.User skipUser)
         {
-            var manager = Global.Services.GetService<Model.IDebtManager>();
+            var manager = DebtManager;
             var parser = new Helpers.UserNameParser(manager);
             var result = parser.Parse(message);
             if (result != null)

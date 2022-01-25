@@ -12,17 +12,17 @@ namespace DebtSlaveryBot.Bot.Commands
 {
     class CancelCommand : ExtendedBotCommand
     {
-        public CancelCommand(ILogger<IBotService> _logger, string botName)
-            : base(_logger, botName)
+        public CancelCommand(ILogger<IBotService> _logger, IServiceProvider serviceProvider, string botName)
+            : base(_logger, serviceProvider, botName)
         {
             Command = "/cancel";
             Description = "Cancel current active scenario";
         }
 
-        public async override Task Execute(ITelegramBotClient client, IBotService botService, Message messageData)
+        public async override Task Execute(Message messageData)
         {
-            await client.SendTextMessageAsync(messageData.Chat.Id, "Отмена", replyMarkup: new ReplyKeyboardRemove());
-            botService.ResetScenario(new ChatEntry(messageData)); 
+            await TgClient.SendTextMessageAsync(messageData.Chat.Id, "Отмена", replyMarkup: new ReplyKeyboardRemove());
+            Bot.ResetScenario(new ChatEntry(messageData)); 
         }
     }
 }

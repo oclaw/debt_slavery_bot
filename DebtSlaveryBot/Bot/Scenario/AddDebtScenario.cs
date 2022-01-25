@@ -19,8 +19,8 @@ namespace DebtSlaveryBot.Bot.Scenario
 {
     class AddDebtScenario : TgBotUserEventScenario
     {
-        public AddDebtScenario(ILogger<IBotService> _logger, ITelegramBotClient botClient)
-            : base(_logger, botClient)
+        public AddDebtScenario(ILogger<IBotService> _logger, IServiceProvider serviceProvider)
+            : base(_logger, serviceProvider)
         {
             ScheduleNext(OnStart);
         }
@@ -47,7 +47,7 @@ namespace DebtSlaveryBot.Bot.Scenario
 
         private async Task<bool> OnStart(Message message)
         {
-            var manager = Global.Services.GetService<Model.IDebtManager>();
+            var manager = DebtManager;
 
             // temp default event
             // todo remove
@@ -192,7 +192,7 @@ namespace DebtSlaveryBot.Bot.Scenario
         {
             try
             {
-                var manager = Global.Services.GetService<Model.IDebtManager>();
+                var manager = DebtManager;
                 
                 foreach (var borrower in Context.Borrowers)
                 {
@@ -208,7 +208,7 @@ namespace DebtSlaveryBot.Bot.Scenario
 
         private async Task NotifyBorrower(BorrowerInfo borrower, StringBuilder creditorNotification)
         {
-            var manager = Global.Services.GetService<Model.IDebtManager>();
+            var manager = DebtManager;
 
             var (notify, chatId) = BotService.GetPrimaryChatId(borrower.User.TgDetails.Id);
             if (notify)
@@ -235,7 +235,7 @@ namespace DebtSlaveryBot.Bot.Scenario
         {
             try
             {
-                var manager = Global.Services.GetService<Model.IDebtManager>();
+                var manager = DebtManager;
 
                 string errorText = RequestDescriptionString;
                 if (message.Type != MessageType.Text)

@@ -14,8 +14,8 @@ namespace DebtSlaveryBot.Bot.Scenario
 {
     class GetDebtsScenario : TgBotUserEventScenario
     {
-        public GetDebtsScenario(ILogger<IBotService> logger, ITelegramBotClient botClient)
-            : base(logger, botClient)
+        public GetDebtsScenario(ILogger<IBotService> logger, IServiceProvider serviceProvider)
+            : base(logger, serviceProvider)
         {
             ScheduleNext(OnStart);
         }
@@ -47,7 +47,7 @@ namespace DebtSlaveryBot.Bot.Scenario
 
         public async Task<bool> OnStart(Message message)
         {
-            var manager = Global.Services.GetService<Model.IDebtManager>();
+            var manager = DebtManager;
 
             // temp default event
             // todo remove
@@ -89,8 +89,7 @@ namespace DebtSlaveryBot.Bot.Scenario
                 {
                     throw new ScenarioLogicalException($"Такой пользователь не найден, попробуйте еще раз\n{RequestUserNameString}");
                 }
-                var manager = Global.Services.GetService<Model.IDebtManager>();
-                await ReplyUserBorrowers(manager, creditor, message.Chat.Id, true);
+                await ReplyUserBorrowers(DebtManager, creditor, message.Chat.Id, true);
                 return true;
             }
             catch (ScenarioLogicalException exc)

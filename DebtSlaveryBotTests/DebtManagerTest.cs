@@ -39,7 +39,6 @@ namespace DebtSlaveryBotTests
         [SetUp]
         public void Setup()
         {
-            Manager = new DebtManager(new NullLogger<DebtManager>());
 
             var dbOptions = new DbContextOptionsBuilder<DebtDbContext>()
                 .UseInMemoryDatabase("DebtSlaveryBot-InMemoryDB")
@@ -57,7 +56,7 @@ namespace DebtSlaveryBotTests
                 Services = { dbContext }
             };
 
-            DebtSlaveryBot.Global.Services = provider;
+            Manager = new DebtManager(new NullLogger<DebtManager>(), provider);
 
             Manager.ClearStorage();
         }

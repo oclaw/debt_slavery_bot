@@ -12,17 +12,17 @@ namespace DebtSlaveryBot.Bot.Commands
 {
     internal class ImpersonalModeCommand : ExtendedBotCommand
     {
-        public ImpersonalModeCommand(ILogger<IBotService> logger, string botName) :
-            base(logger, botName)
+        public ImpersonalModeCommand(ILogger<IBotService> logger, IServiceProvider serviceProvider, string botName) :
+            base(logger, serviceProvider, botName)
         {
             Command = "/set_impersonal_mode";
             Description = "see/edit debts of other accounts";
         }
 
-        public override async Task Execute(ITelegramBotClient client, IBotService botService, Message message)
+        public override async Task Execute(Message message)
         {
-            botService.RunScenario(new ChatEntry(message),
-                       new Scenario.ImpersonalModeScenario(Logger, client));
+            Bot.RunScenario(new ChatEntry(message),
+                       new Scenario.ImpersonalModeScenario(Logger, ServiceProvider));
         }
     }
 }

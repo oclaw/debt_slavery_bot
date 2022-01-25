@@ -4,3 +4,4 @@ RPI
 */bin
 */obj
 */appsettings.json
+*.csproj.user

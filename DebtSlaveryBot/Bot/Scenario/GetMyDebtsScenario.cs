@@ -14,8 +14,8 @@ namespace DebtSlaveryBot.Bot.Scenario
 {
     class GetMyDebtsScenario : TelegramBotScenario
     {
-        public GetMyDebtsScenario(ILogger<IBotService> logger, ITelegramBotClient botClient)
-            : base(logger, botClient)
+        public GetMyDebtsScenario(ILogger<IBotService> logger, IServiceProvider serviceProvider)
+            : base(logger, serviceProvider)
         {
             ScheduleNext(OnStart);
         }
@@ -24,7 +24,7 @@ namespace DebtSlaveryBot.Bot.Scenario
         {
             try
             {
-                var manager = Global.Services.GetService<Model.IDebtManager>();
+                var manager = DebtManager;
                 var me = manager.GetUser(message.From.Id);
                 if (me == null)
                 {

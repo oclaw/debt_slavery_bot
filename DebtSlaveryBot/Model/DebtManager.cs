@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using DebtSlaveryBot.Helpers;
 using System.Linq;
 
@@ -43,10 +45,14 @@ namespace DebtSlaveryBot.Model
     public class DebtManager : IDebtManager
     {
         private ILogger<DebtManager> _logger;
+        private IServiceProvider _services;
 
-        public DebtManager(ILogger<DebtManager> logger)
+        private DebtDbContext DbContext => _services.GetService<DebtDbContext>();
+
+        public DebtManager(ILogger<DebtManager> logger, IServiceProvider provider)
         {
             _logger = logger;
+            _services = provider;
         }
 
         TotalDebt GetTotalRecord(DebtDbContext ctx, User _from, User _to)
@@ -57,15 +63,15 @@ namespace DebtSlaveryBot.Model
             return queryResult.FirstOrDefault();
         }
 
-        public User GetUser(string name) => GetUser(Global.DbContext, name, true);
+        public User GetUser(string name) => GetUser(DbContext, name, true);
 
         public User GetUser(long telegramId)
         {
-            var db = Global.DbContext;
+            var db = DbContext;
             return db.Users.Where(i => i.TgDetails != null && i.TgDetails.Id == telegramId).FirstOrDefault();
         }
 
-        public DebtEvent GetEvent(string _event) => Global.DbContext.Events.FirstOrDefault(e => e.Name == _event);
+        public DebtEvent GetEvent(string _event) => DbContext.Events.FirstOrDefault(e => e.Name == _event);
 
         private User GetUser(DebtDbContext ctx, string name, bool nullable = false)
         {
@@ -83,7 +89,7 @@ namespace DebtSlaveryBot.Model
             }
             _logger.LogInformation($"User {user.Name}, impersonal mode: {isImpersonal}");
             user.TgDetails.ImpersonalMode = isImpersonal;
-            Global.DbContext.SaveChanges();
+            DbContext.SaveChanges();
         }
 
         private (User, User) GetPair(DebtDbContext ctx, string user1, string user2) => (ctx.Users.First(u => u.Name == user1), ctx.Users.First(u => u.Name == user2));
@@ -130,7 +136,7 @@ namespace DebtSlaveryBot.Model
 
         public Debt AddDebt(string fromUser, string toUser, decimal sum, string description = null, string _event = null)
         {
-            var db = Global.DbContext;
+            var db = DbContext;
 
             var (_from, _to) = GetPair(db, fromUser, toUser);
             DebtEvent _debtEvent = _event == null ? null : db.Events.First(e => e.Name == _event);
@@ -144,7 +150,7 @@ namespace DebtSlaveryBot.Model
 
         public User AddUser(string name, TgDetails details = null)
         {
-            var db = Global.DbContext;
+            var db = DbContext;
 
             _logger.LogInformation($"New user {name}");
             var user = new User { Name = name, TgDetails = details };
@@ -159,7 +165,7 @@ namespace DebtSlaveryBot.Model
 
         public DebtEvent AddEvent(string name, List<string> users)
         {
-            var db = Global.DbContext;
+            var db = DbContext;
 
             _logger.LogInformation($"Adding event {name}, {users?.Count} users included");
 
@@ -192,7 +198,7 @@ namespace DebtSlaveryBot.Model
 
         public decimal GetTotalDebtSum(string from, string to)
         {
-            var db = Global.DbContext;
+            var db = DbContext;
 
             var (_from, _to) = GetPair(db, from, to);
 
@@ -230,7 +236,7 @@ namespace DebtSlaveryBot.Model
 
         public List<Debt> GetActiveDebts(string from, string to, string _event = null)
         {
-            var db = Global.DbContext;
+            var db = DbContext;
 
             var (_from, _to) = GetPair(db, from, to);
 
@@ -239,7 +245,7 @@ namespace DebtSlaveryBot.Model
 
         public void WriteOffDebts(string from, string to, string _event = null)
         {
-            var db = Global.DbContext;
+            var db = DbContext;
 
             _logger.LogDebug($"Writing off debts from '{from}' to '{to}', linked event: '{_event}'");
             var (_from, _to) = GetPair(db, from, to);
@@ -260,7 +266,7 @@ namespace DebtSlaveryBot.Model
 
         public void WriteOffDebt(int debtId)
         {
-            var db = Global.DbContext;
+            var db = DbContext;
             _logger.LogDebug($"Writing off single debt ID {debtId}");
 
             var debt = db.Debts.First(d => d.Id == debtId);
@@ -283,7 +289,7 @@ namespace DebtSlaveryBot.Model
 
         public void WriteOffDebtPartially(int debtId, decimal sum)
         {
-            var db = Global.DbContext;
+            var db = DbContext;
             _logger.LogDebug($"Writing off part of single debt ID {debtId}, value: {sum}");
 
             var debt = db.Debts.First(d => d.Id == debtId);
@@ -314,7 +320,7 @@ namespace DebtSlaveryBot.Model
 
         public void ShareSum(decimal sum, string payer, string _event, string description = null)
         {
-            var db = Global.DbContext;
+            var db = DbContext;
             _logger.LogInformation($"Sharing {sum} between event '{_event}' members");
 
             User _payer = GetUser(payer);
@@ -342,7 +348,7 @@ namespace DebtSlaveryBot.Model
 
         private Dictionary<User, decimal> GetAllRelatedTotals(string user, bool isCreditor)
         {
-            var db = Global.DbContext;
+            var db = DbContext;
 
             var _user = GetUser(user);
             var relatedTotals = from total in db.TotalDebts
@@ -362,7 +368,7 @@ namespace DebtSlaveryBot.Model
 
         private Dictionary<User, decimal> GetRelatedTotalsInEvent(string user, string _event, bool isCreditor)
         {
-            var db = Global.DbContext;
+            var db = DbContext;
 
             var _user = GetUser(user);
             var _debtEvent = db.Events.First(e => e.Name == _event);
@@ -396,7 +402,7 @@ namespace DebtSlaveryBot.Model
 
         public void LinkUserToEvent(string name, string _event)
         {
-            var db = Global.DbContext;
+            var db = DbContext;
 
             _logger.LogDebug($"Linking user '{name}' to event '{_event}'");
 
@@ -414,7 +420,7 @@ namespace DebtSlaveryBot.Model
         }
 
 
-        public void ClearStorage() => DeleteAllFromDb(Global.DbContext);
+        public void ClearStorage() => DeleteAllFromDb(DbContext);
 
         // Debug methods
         void DeleteAllFromDb(DebtDbContext ctx) =>

@@ -15,8 +15,8 @@ namespace DebtSlaveryBot.Bot.Scenario
 {
     class ImpersonalModeScenario : TelegramBotScenario
     {
-        public ImpersonalModeScenario(ILogger<IBotService> logger, ITelegramBotClient botClient)
-            : base(logger, botClient)
+        public ImpersonalModeScenario(ILogger<IBotService> logger, IServiceProvider serviceProvider)
+            : base(logger, serviceProvider)
         {
             SetChain(OnStart, OnAnswerReceived);
         }
@@ -51,7 +51,7 @@ namespace DebtSlaveryBot.Bot.Scenario
                 {
                     throw new ScenarioLogicalException(errorText);
                 }
-                var manager = Global.Services.GetService<Model.IDebtManager>();
+                var manager = DebtManager;
                 manager.SetImpersonalMode(message.From.Id, modeOn);
                 await BotClient.SendTextMessageAsync(message.Chat.Id, $"impersonal режим {(modeOn ? "включен" : "выключен")}", replyMarkup: new ReplyKeyboardRemove());
                 return true;

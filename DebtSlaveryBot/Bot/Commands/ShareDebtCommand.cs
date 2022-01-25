@@ -12,16 +12,16 @@ namespace DebtSlaveryBot.Bot.Commands
 {
     internal class ShareDebtCommand : ExtendedBotCommand
     {
-        public ShareDebtCommand(ILogger<IBotService> logger, string botName) :
-            base(logger, botName)
+        public ShareDebtCommand(ILogger<IBotService> logger, IServiceProvider serviceProvider, string botName) :
+            base(logger, serviceProvider, botName)
         {
             Command = "/share_debt";
             Description = "share debt between one or more users";
         }
 
-        public override async Task Execute(Telegram.Bot.ITelegramBotClient client, IBotService botService, Message message)
+        public override async Task Execute(Message message)
         {
-            botService.RunScenario(new ChatEntry(message), new Scenario.ShareDebtScenario(Logger, client));
+            Bot.RunScenario(new ChatEntry(message), new Scenario.ShareDebtScenario(Logger, ServiceProvider));
         }
     }
 }

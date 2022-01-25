@@ -16,16 +16,16 @@ namespace DebtSlaveryBot.Bot.Commands
 {
     internal class StartCommand : ExtendedBotCommand
     {
-        public StartCommand(ILogger<IBotService> logger, string botName) :
-            base(logger, botName)
+        public StartCommand(ILogger<IBotService> logger, IServiceProvider serviceProvider, string botName) :
+            base(logger, serviceProvider, botName)
         {
             Command = "/start";
             Description = "initialize bot";
         }
 
-        public override async Task Execute(Telegram.Bot.ITelegramBotClient client, IBotService botService, Message message)
+        public override async Task Execute(Message message)
         {
-            var manager = Global.Services.GetService<IDebtManager>();
+            var manager = ServiceProvider.GetService<IDebtManager>();
             var tgFrom = message.From;
             var uname = string.IsNullOrWhiteSpace(tgFrom.Username) ? tgFrom.Id.ToString() : tgFrom.Username;
             var user = manager.GetUser(uname);
@@ -44,12 +44,12 @@ namespace DebtSlaveryBot.Bot.Commands
                 // todo remove
                 manager.LinkUserToEvent(uname, Helpers.Defaults.DefaultEvent);
 
-                await client.SendTextMessageAsync(message.Chat.Id, $"Hello @{user.Name} :)");
+                await TgClient.SendTextMessageAsync(message.Chat.Id, $"Hello @{user.Name} :)");
             }
             else
             {
                 Logger.LogInformation($"Found tg user {uname} in db!");
-                await client.SendTextMessageAsync(chatId: message.Chat.Id, text: $"Welcome back @{user.Name} :)");
+                await TgClient.SendTextMessageAsync(chatId: message.Chat.Id, text: $"Welcome back @{user.Name} :)");
             }
         }
     }

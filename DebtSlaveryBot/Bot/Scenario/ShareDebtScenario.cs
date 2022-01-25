@@ -19,8 +19,8 @@ namespace DebtSlaveryBot.Bot.Scenario
 {
     class ShareDebtScenario : TgBotUserEventScenario
     {
-        public ShareDebtScenario(ILogger<IBotService> _logger, ITelegramBotClient botClient)
-            : base(_logger, botClient)
+        public ShareDebtScenario(ILogger<IBotService> _logger, IServiceProvider serviceProvider)
+            : base(_logger, serviceProvider)
         {
             ScheduleNext(OnStart);
         }
@@ -48,7 +48,7 @@ namespace DebtSlaveryBot.Bot.Scenario
 
         private async Task<bool> OnStart(Message message)
         {
-            var manager = Global.Services.GetService<Model.IDebtManager>();
+            var manager = DebtManager;
 
             // temp default event
             // todo remove
@@ -167,7 +167,7 @@ namespace DebtSlaveryBot.Bot.Scenario
                 AddDebts();
                 await BotClient.SendTextMessageAsync(message.Chat.Id, "Готово :)");
 
-                var manager = Global.Services.GetService<Model.IDebtManager>();
+                var manager = DebtManager;
 
                 StringBuilder creditorNotification = null;
                 bool notifyCreditor = false;
@@ -203,7 +203,7 @@ namespace DebtSlaveryBot.Bot.Scenario
 
         async Task NotifyBorrowers(StringBuilder creditorNotification)
         {
-            var manager = Global.Services.GetService<Model.IDebtManager>();
+            var manager = DebtManager;
 
             IEnumerable<Model.User> borrowers = Context.Borrowers;
             if (borrowers == null)
@@ -220,7 +220,7 @@ namespace DebtSlaveryBot.Bot.Scenario
 
         async Task Notify(Model.User borrower)
         {
-            var manager = Global.Services.GetService<Model.IDebtManager>();
+            var manager = DebtManager;
 
             var (notify, chatId) = BotService.GetPrimaryChatId(borrower.TgDetails.Id);
             if (!notify)
@@ -243,7 +243,7 @@ namespace DebtSlaveryBot.Bot.Scenario
 
         private void AddDebts()
         {
-            var manager = Global.Services.GetService<Model.IDebtManager>();
+            var manager = DebtManager;
 
             if (Context.Borrowers == null)
             {
