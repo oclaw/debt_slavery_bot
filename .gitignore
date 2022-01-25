@@ -1,0 +1,6 @@
+.vs
+.vscode
+RPI
+*/bin
+*/obj
+*/appsettings.json
