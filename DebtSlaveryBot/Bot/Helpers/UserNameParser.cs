@@ -14,7 +14,7 @@ namespace DebtSlaveryBot.Bot.Helpers
             DebtManager = manager;
         }
 
-        private Model.User GetUserFromContact(Contact contact)
+        private Model.User GetUser(Contact contact)
         {
             var id = contact.UserId;
             if (id == null)
@@ -24,7 +24,7 @@ namespace DebtSlaveryBot.Bot.Helpers
             return user;
         }
 
-        private Model.User GetUserFromText(Message message)
+        private Model.User GetUser(Message message)
         {
             if (!message.Text.StartsWith('@'))
             {
@@ -37,8 +37,8 @@ namespace DebtSlaveryBot.Bot.Helpers
 
         public Model.User Parse(Message message) => message.Type switch
         {
-            MessageType.Text => GetUserFromText(message),
-            MessageType.Contact => GetUserFromContact(message.Contact),
+            MessageType.Text => GetUser(message),
+            MessageType.Contact => GetUser(message.Contact),
             _ => null
         };
 

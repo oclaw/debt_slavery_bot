@@ -8,8 +8,11 @@ using Telegram.Bot.Types;
 
 using Microsoft.Extensions.Logging;
 
+using DebtSlaveryBot.Bot.Helpers.Attributes;
+
 namespace DebtSlaveryBot.Bot.Commands
 {
+    [BotCommand]
     internal class ImpersonalModeCommand : ExtendedBotCommand
     {
         public ImpersonalModeCommand(ILogger<IBotService> logger, IServiceProvider serviceProvider, string botName) :

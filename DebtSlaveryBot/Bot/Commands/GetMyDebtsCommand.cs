@@ -8,8 +8,12 @@ using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
+using DebtSlaveryBot.Bot.Helpers.Attributes;
+
+
 namespace DebtSlaveryBot.Bot.Commands
 {
+    [BotCommand]
     internal class GetMyDebtsCommand : ExtendedBotCommand
     {
         public GetMyDebtsCommand(ILogger<IBotService> logger, IServiceProvider serviceProvider, string botName) :

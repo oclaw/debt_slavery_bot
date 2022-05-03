@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-
 using Microsoft.Extensions.Logging;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using DebtSlaveryBot.Bot.Helpers.Attributes;
 
 namespace DebtSlaveryBot.Bot.Commands
 {
+    [BotCommand]
     class CancelCommand : ExtendedBotCommand
     {
         public CancelCommand(ILogger<IBotService> _logger, IServiceProvider serviceProvider, string botName)

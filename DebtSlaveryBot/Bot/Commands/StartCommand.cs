@@ -11,9 +11,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
 using DebtSlaveryBot.Model;
+using DebtSlaveryBot.Bot.Helpers.Attributes;
 
 namespace DebtSlaveryBot.Bot.Commands
 {
+    [BotCommand]
     internal class StartCommand : ExtendedBotCommand
     {
         public StartCommand(ILogger<IBotService> logger, IServiceProvider serviceProvider, string botName) :

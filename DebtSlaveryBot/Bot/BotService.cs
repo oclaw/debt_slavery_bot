@@ -24,7 +24,6 @@ using Microsoft.Extensions.Configuration;
 
 namespace DebtSlaveryBot.Bot
 {
-
     class BotService : IBotService
     {
         private readonly ILogger<BotService> _logger;
@@ -33,7 +32,7 @@ namespace DebtSlaveryBot.Bot
 
         private ITelegramBotClient BotClient => _services.GetService<ITelegramBotClient>();
         private DbContext DbContext => _services.GetService<DebtDbContext>();
-        private List<ExtendedBotCommand> Commands;
+        private List<ExtendedBotCommand> Commands = new List<ExtendedBotCommand>();
 
         private ConcurrentDictionary<ChatEntry, Scenario.TelegramBotScenario> Executors;
 
@@ -88,8 +87,18 @@ namespace DebtSlaveryBot.Bot
             }
         }
 
-        private ExtendedBotCommand Command<T>() where T: ExtendedBotCommand => 
-            (ExtendedBotCommand)Activator.CreateInstance(typeof(T), _logger, _services, BotName);
+        private void RegisterCoomands()
+        {
+            var commands = Helpers.Boot.GetActiveCommands(System.Reflection.Assembly.GetExecutingAssembly());
+            foreach (var command in commands)
+            {
+                Commands.Add(
+                    (ExtendedBotCommand)Activator.CreateInstance(
+                        command, _logger, _services, BotName));
+            }
+            _logger.LogInformation($"Registered {Commands.Count} commands");
+            BotClient.SetMyCommandsAsync(Commands).Wait();
+        }
 
         public void Start(CancellationToken cancellationToken)
         {
@@ -105,16 +114,7 @@ namespace DebtSlaveryBot.Bot
 
             _logger.LogInformation($"Bot connected with ID {me.Id} and bot name is {me.Username}");
 
-            Commands = new List<ExtendedBotCommand>
-            {
-                Command<StartCommand>(), Command<HelpCommand>(),
-                Command<AddDebtCommand>(), Command<ShareDebtCommand>(),
-                Command<PayOffDebtsCommand>(), Command<CancelCommand>(),
-                Command<GetAllDebtsCommand>(), Command<GetMyDebtsCommand>(),
-                Command<ImpersonalModeCommand>()
-            };
-
-            BotClient.SetMyCommandsAsync(Commands).Wait();
+            RegisterCoomands();
 
             Helpers.Defaults.DefaultEvent = botSettings.GetSection("active_event").Value;
 
@@ -129,8 +129,6 @@ namespace DebtSlaveryBot.Bot
                 manager.AddEvent(Helpers.Defaults.DefaultEvent, null);
                 _logger.LogInformation($"Default Event '{Helpers.Defaults.DefaultEvent}' added!");
             }
-
-            var db = _services.GetService<DebtDbContext>();
 
             var receiverOptions = new ReceiverOptions() { AllowedUpdates = { } }; 
             BotClient.StartReceiving(

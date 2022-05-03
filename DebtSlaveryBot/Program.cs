@@ -70,8 +70,8 @@ namespace DebtSlaveryBot
             return services.AddDbContext<DebtDbContext>(opts =>
                 opts
                     .UseNpgsql(_config.GetConnectionString(PgSqlConnString),
-                        o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))
-                    .UseSnakeCaseNamingConvention()
+                        o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))    // for lazy loading support (PgSQL does not support MARS)
+                    .UseSnakeCaseNamingConvention()                                             // for proper table names (PgSQL constraint)
                     .UseLazyLoadingProxies()
                     .UseLoggerFactory(logFac));
         }
@@ -92,7 +92,7 @@ namespace DebtSlaveryBot
 
         static IServiceCollection InitDatabase(IServiceCollection serviceCollection, ILoggerFactory logFac)
         {
-            var dbEngine = _config.GetSection(DbEngineSection).Value;
+            var dbEngine = _config.GetValue<string>(DbEngineSection);
             return dbEngine switch
             {
                 PgSqlConnString => InitPgSql(serviceCollection, logFac),
@@ -117,13 +117,13 @@ namespace DebtSlaveryBot
 
             InitDatabase(serviceCollection, loggerFactory);
 
-            serviceCollection.AddSingleton<IConfiguration>(_config);
-            serviceCollection.AddSingleton<IBotService, BotService>();
-            serviceCollection.AddTransient<IDebtManager, DebtManager>();
-            serviceCollection.AddSingleton<ITelegramBotClient>(sp => {
-                var botSettings = _config.GetSection(BotSettingsConfigSection);
-                var token = botSettings.GetValue<string>("token");
-                return new TelegramBotClient(token);
+            serviceCollection.AddSingleton<IConfiguration>(_config)         // app settings service
+                             .AddSingleton<IBotService, BotService>()       // bot scenario receiver & executor
+                             .AddTransient<IDebtManager, DebtManager>()     // data model service
+                             .AddSingleton<ITelegramBotClient>(sp => {      // telegram transport service
+                    var botSettings = _config.GetSection(BotSettingsConfigSection);
+                    var token = botSettings.GetValue<string>("token");
+                    return new TelegramBotClient(token);
             });
 
             _serviceProvider = serviceCollection.BuildServiceProvider();
@@ -142,7 +142,7 @@ namespace DebtSlaveryBot
 
             var mainService = _serviceProvider.GetService<IBotService>();
 
-            _logger.LogInformation("Starting main application");
+            _logger.LogInformation("Starting main service");
 
             CancellationTokenSource cts = new CancellationTokenSource();
             var token = cts.Token;
