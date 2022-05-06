@@ -42,7 +42,7 @@ namespace DebtSlaveryBot.Bot.Scenario
             return builder.ToString();
         }
 
-        private Model.User GetUserByIdx(string idxText, Model.DebtEvent _event, Model.User skipUser)
+        private Model.User GetUserByIdx(string idxText, IEnumerable<Model.User> users, Model.User skipUser)
         {
             if (!int.TryParse(idxText, out int idx))
             {
@@ -51,7 +51,7 @@ namespace DebtSlaveryBot.Bot.Scenario
             }
             idx--;
 
-            int maxCount = _event.Users.Count;
+            int maxCount = users.Count();
             if (skipUser != null)
             {
                 maxCount--;
@@ -64,9 +64,14 @@ namespace DebtSlaveryBot.Bot.Scenario
             }
 
             if (skipUser != null)
-                return _event.Users.Where(u => u != skipUser).Skip(idx).First();
+                return users.Where(u => u != skipUser).Skip(idx).First();
 
-            return _event.Users.Skip(idx).First();
+            return users.Skip(idx).First();
+        }
+
+        private Model.User GetUserByIdx(string idxText, Model.DebtEvent _event, Model.User skipUser)
+        {
+            return GetUserByIdx(idxText, _event.Users, skipUser);
         }
 
         protected List<Model.User> GetUserListFromMessage(Message message, Model.DebtEvent _event, Model.User skipUser)
@@ -131,6 +136,28 @@ namespace DebtSlaveryBot.Bot.Scenario
             }
 
             return GetUserByIdx(message.Text, _event, skipUser);
+        }
+
+        protected Model.User GetUserFromMessage(Message message, IEnumerable<Model.User> users)
+        {
+            var manager = DebtManager;
+            var parser = new Helpers.UserNameParser(manager);
+            var result = parser.Parse(message);
+            if (result != null)
+            {
+                if (!users.Contains(result))
+                    return null;
+                return result;
+            }
+
+            Logger.LogInformation("Direct user name is not parsed, searching through list");
+            if (message.Type != MessageType.Text)
+            {
+                Logger.LogWarning("Cannot extract index from non-text message!");
+                return null;
+            }
+
+            return GetUserByIdx(message.Text, users, null);
         }
 
         protected decimal CalcSum(string text, string errorText)

@@ -61,7 +61,7 @@ namespace DebtSlaveryBot.Bot.Scenario
             }
             if (currentUser.TgDetails.ImpersonalMode)
             {
-                await BotClient.SendTextMessageAsync(message.Chat.Id, "*impersonal mode*", Telegram.Bot.Types.Enums.ParseMode.Markdown);
+                await BotClient.SendTextMessageAsync(message.Chat.Id, "*impersonal mode*", ParseMode.Markdown);
                 ScheduleNext(OnCreditorNameReceived);
                 await RequestBorrowerName(message.Chat.Id, true);
                 return true;
