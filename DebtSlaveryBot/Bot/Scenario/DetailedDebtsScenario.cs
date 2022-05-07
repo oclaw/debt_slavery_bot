@@ -61,7 +61,6 @@ namespace DebtSlaveryBot.Bot.Scenario
             }
             Context.Requester = currentUser;
             RequestTarget(message.Chat.Id);
-            ScheduleNext(OnTargetReceived);
             return true;
         }
 
@@ -96,6 +95,11 @@ namespace DebtSlaveryBot.Bot.Scenario
             Context.PossibleTargets.AddRange(creditors.Select(u =>
                 new PossibleTarget { User = u.Key, IsCreditor = true }));
 
+            if (Context.PossibleTargets.Count == 0)
+            {
+                await BotClient.SendTextMessageAsync(chatId, "Долгов нет, деталей тоже :)");
+                return;
+            }
 
             var builder = new StringBuilder();
             int idx = 1;
@@ -112,6 +116,7 @@ namespace DebtSlaveryBot.Bot.Scenario
             builder.AppendLine("Выберите из списка или введите @имя или контакт");
 
             await BotClient.SendTextMessageAsync(chatId, builder.ToString());
+            ScheduleNext(OnTargetReceived);
         }
 
         private async Task<bool> OnRequesterReceived(Message message)
@@ -126,7 +131,6 @@ namespace DebtSlaveryBot.Bot.Scenario
                     throw new ScenarioLogicalException($"Такой пользователь не найден, пусть зарегистрируется (или что-то не так введено)\n{RequestCreditorNameString}");
                 }
                 RequestTarget(message.Chat.Id);
-                ScheduleNext(OnTargetReceived);
                 return true;
             }
             catch (ScenarioLogicalException exc)
